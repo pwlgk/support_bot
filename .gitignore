@@ -1,2 +1,4 @@
 .env
 support_bot.db
+venv
+.venv
