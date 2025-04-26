@@ -1,0 +1,45 @@
+# docker-compose.yml
+
+version: '3.9' # Используем одну из свежих версий
+
+services:
+  # Сервис базы данных PostgreSQL
+  db:
+    image: postgres:15 # Выберите нужную версию PostgreSQL (e.g., 14, 15, 16)
+    container_name: support_postgres_db
+    restart: unless-stopped # Перезапускать, если не остановлен вручную
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Сохранение данных БД в volume
+    environment:
+      # Используем значения из .env файла
+      POSTGRES_USER: support_bot
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: support_bot_db
+    #ports:
+      # Проброс порта наружу (опционально, для доступа к БД с хоста)
+      # Раскомментируйте, если нужно подключаться к БД напрямую для отладки
+      # - "5432:5432"
+    healthcheck: # Проверка готовности БД
+      test: ["CMD-SHELL", "pg_isready -U postgres -d support_bot_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Сервис вашего Telegram бота
+  bot:
+    build: . # Собирать образ из Dockerfile в текущей директории
+    container_name: support_telegram_bot
+    restart: unless-stopped
+    env_file:
+      - .env # Загрузить все переменные из .env файла в контейнер бота
+    depends_on:
+      db: # Запускать бота только после того, как БД будет готова
+        condition: service_healthy # Ждать успешного healthcheck'а от сервиса 'db'
+    # Если вы используете Alembic для миграций БД при старте,
+    # раскомментируйте и настройте команду:
+    # command: bash -c "alembic upgrade head && python main.py"
+    # Убедитесь, что alembic установлен и настроен в вашем проекте
+
+# Определяем именованный volume для хранения данных PostgreSQL
+volumes:
+  postgres_data:

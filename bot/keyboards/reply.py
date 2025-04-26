@@ -23,14 +23,6 @@ def get_main_menu_keyboard(user_role: UserRole) -> ReplyKeyboardMarkup:
         builder.row(
             KeyboardButton(text=ADMIN_PANEL_BTN_TEXT) # Главная кнопка админа
         )
-        # # Можно добавить сюда же кнопки инженера, если админ = инженер
-        # builder.row(
-        #     KeyboardButton(text=VIEW_NEW_REQUESTS_BTN_TEXT),
-        #     KeyboardButton(text=MY_ASSIGNED_REQUESTS_BTN_TEXT)
-        # )
-        # builder.row(
-        #      KeyboardButton(text=HISTORY_BTN_TEXT) # История для админа/инженера
-        # )
     elif user_role == UserRole.ENGINEER:
         builder.row(
             KeyboardButton(text=VIEW_NEW_REQUESTS_BTN_TEXT),
@@ -39,19 +31,15 @@ def get_main_menu_keyboard(user_role: UserRole) -> ReplyKeyboardMarkup:
         builder.row(
             KeyboardButton(text=HISTORY_BTN_TEXT)
         )
-        # Инженер тоже может быть клиентом, если нужно оставить кнопку
-        # builder.row(KeyboardButton(text=NEW_REQUEST_BTN_TEXT))
     else: # По умолчанию или для UserRole.CLIENT
          builder.row(
             KeyboardButton(text=NEW_REQUEST_BTN_TEXT)
         )
          builder.row(
-             KeyboardButton(text=MY_REQUESTS_BTN_TEXT) # Пока не работает
+             KeyboardButton(text=MY_REQUESTS_BTN_TEXT) 
         )
 
-    # Общие кнопки можно добавить здесь, например /help
-    # builder.row(KeyboardButton(text="/help"))
-
+    
     return builder.as_markup(resize_keyboard=True, one_time_keyboard=False)
 
 def get_cancel_keyboard() -> ReplyKeyboardMarkup:

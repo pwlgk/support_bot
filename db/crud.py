@@ -341,3 +341,18 @@ async def get_all_users(
     total_count = total_count_result.scalar_one_or_none() or 0
 
     return users_list, total_count
+
+
+async def get_request_by_id(session: AsyncSession, request_id: int) -> Request | None:
+    """Получает заявку по её ID с загрузкой связанных пользователя и инженера."""
+    stmt = (
+        select(Request)
+        .where(Request.id == request_id)
+        # Загружаем связанные объекты сразу, чтобы избежать lazy loading в async
+        .options(
+            selectinload(Request.requester),
+            selectinload(Request.engineer)
+        )
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none() # Возвращает одну заявку или None, если не найдена

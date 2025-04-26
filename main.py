@@ -3,9 +3,6 @@ import asyncio
 import logging
 import argparse # <--- Импорт для парсинга аргументов
 
-from aiogram import Bot, Dispatcher
-from aiogram.enums import ParseMode # <--- Импорт ParseMode для явного указания (если нужно)
-
 # Импорты роутеров
 from bot.handlers.admin import admin_panel as admin_main_router
 # from bot.handlers.admin import manage_users as admin_users_router # Убрали этот роутер
@@ -13,15 +10,13 @@ from bot.handlers.client import new_request as client_new_request_router
 from bot.handlers.client import view_requests as client_view_router
 from bot.handlers.engineer import manage_requests as engineer_manage_router
 from bot.handlers import common
-from bot.handlers.fallbacks import fallback as fallback_router # Обновленный импорт
 
 # Импорты базы данных и middleware
 from db.database import engine, Base, AsyncSessionFactory
 from db import models # noqa
 # --- ИМПОРТ CRUD ФУНКЦИИ ---
-from db.crud import set_user_role, get_user # Импортируем нужные функции
+from db.crud import set_user_role, get_user
 from db.models import UserRole # Импортируем роли
-# ---------------------------
 from bot.middlewares.db import DbSessionMiddleware
 from bot.loader import bot, dp # Загружаем bot и dp
 
@@ -34,7 +29,7 @@ async def create_db_tables():
         await conn.run_sync(Base.metadata.create_all)
     logging.info("Database tables checked/created.")
 
-# --- НОВАЯ АСИНХРОННАЯ ФУНКЦИЯ ДЛЯ УСТАНОВКИ АДМИНА ---
+# --- ФУНКЦИЯ ДЛЯ УСТАНОВКИ АДМИНА ---
 async def set_initial_admin(user_id: int):
     """Устанавливает роль ADMIN пользователю с указанным ID."""
     logging.info(f"Attempting to set user {user_id} as initial admin...")
@@ -58,7 +53,6 @@ async def set_initial_admin(user_id: int):
         except Exception as e:
             logging.error(f"Error during initial admin setup for user {user_id}: {e}", exc_info=True)
             return False
-# --- КОНЕЦ НОВОЙ ФУНКЦИИ ---
 
 async def main():
     # --- ПАРСИНГ АРГУМЕНТОВ КОМАНДНОЙ СТРОКИ ---
@@ -70,7 +64,6 @@ async def main():
         help="Set the user with the specified Telegram ID as the initial administrator."
     )
     args = parser.parse_args()
-    # -----------------------------------------
 
     # 1. Создаем таблицы
     await create_db_tables()
@@ -84,7 +77,6 @@ async def main():
             logging.critical(f"Failed to set initial admin {admin_user_id}. Exiting.")
             return # Прерываем выполнение main
         # Если успешно, продолжаем запуск бота
-    # -------------------------------------------
 
     # 2. Конфигурируем Dispatcher
     dp['bot'] = bot
@@ -93,13 +85,11 @@ async def main():
 
     # 3. Регистрируем роутеры
     logging.info("Registering routers...")
-    # Порядок регистрации: Админ -> Специфичные (FSM, списки) -> Общие -> Fallback
     dp.include_router(admin_main_router.router)
     dp.include_router(client_new_request_router.router)
     dp.include_router(client_view_router.router)
     dp.include_router(engineer_manage_router.router)
     dp.include_router(common.router)
-    dp.include_router(fallback_router.router) # Fallback последним
 
     # 4. Запуск бота
     await bot.delete_webhook(drop_pending_updates=True)

@@ -1,11 +1,12 @@
 # bot/filters/role.py
-from typing import Union, List # Для аннотаций типов
+from typing import Union, List 
 from aiogram.filters import BaseFilter
 from aiogram.types import Message, CallbackQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.crud import get_user # Импортируем функцию для получения пользователя
-from db.models import UserRole # Импортируем Enum ролей
+from db.crud import get_user 
+from db.models import UserRole 
+
 
 class RoleFilter(BaseFilter):
     """
@@ -33,7 +34,6 @@ class RoleFilter(BaseFilter):
         db_user = await get_user(session, user.id)
 
         if not db_user:
-            # Пользователя нет в БД (маловероятно после /start, но на всякий случай)
             return False
 
         # Проверяем, входит ли роль пользователя в список разрешенных

@@ -1,7 +1,7 @@
 # bot/loader.py
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.client.default import DefaultBotProperties # <--- ДОБАВИТЬ ЭТОТ ИМПОРТ
+from aiogram.client.default import DefaultBotProperties
 from config import BOT_TOKEN
 
 storage = MemoryStorage()

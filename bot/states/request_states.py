@@ -11,4 +11,3 @@ class CreateRequest(StatesGroup):
     waiting_for_description = State()   # Ожидание описания проблемы
     waiting_for_pc_number = State()     # Ожидание ПК/инв. номера (необязательно)
     waiting_for_phone = State()         # Ожидание номера телефона
-    # confirming_request = State()      # Шаг подтверждения пока уберем для простоты
