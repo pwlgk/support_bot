@@ -1,4 +1,5 @@
 # bot/handlers/common.py
+from html import escape
 import logging
 from aiogram import Router, types, F
 from aiogram.filters import CommandStart, Command
@@ -64,6 +65,34 @@ async def cancel_handler(message: types.Message, state: FSMContext, session: Asy
     await state.clear()
     await message.answer("Действие отменено.", reply_markup=keyboard)
 
+@router.message(Command("info"))
+async def cmd_info(message: types.Message, session: AsyncSession): # session может и не понадобиться
+        """Отправляет информацию о боте."""
+        # Замените URL на актуальный URL вашего репозитория
+        github_repo_url = "https://github.com/pwlgk/support_bot"
+        developer_name = "Pavel Geiko"
+        project_name = "Бот Службы Поддержки (support_bot)"
+        version = "1.0.0" # Пример
+        license_name = "MIT License"
+        info_text = f"""
+    ℹ️ <b>Информация о боте</b>
+
+    <b>Название:</b> {escape(project_name)}
+    <b>Версия:</b> {escape(version)}
+    <b>Назначение:</b> Автоматизация приема, обработки и отслеживания заявок на техническую поддержку.
+
+    <b>Разработчик:</b> {escape(developer_name)}
+    <b>Лицензия:</b> {escape(license_name)} (Открытое ПО)
+    <b>Исходный код:</b> <a href="{escape(github_repo_url)}">GitHub</a>
+
+    Этот бот разработан для упрощения взаимодействия со службой поддержки внутри организации.
+    Для получения списка доступных команд используйте /help.
+    """
+        await message.answer(
+            info_text,
+            parse_mode="HTML", # <-- ИЗМЕНЕНО: Используем HTML
+            disable_web_page_preview=True # Отключаем превью ссылки GitHub
+        )
 
 @router.message(Command('help'))
 async def cmd_help(message: types.Message, session: AsyncSession):
@@ -116,11 +145,6 @@ async def cmd_help(message: types.Message, session: AsyncSession):
             f"   - Управление пользователями",
             f"   - Активные заявки",
             f"   - История выполненных",
-            "",
-            "   Команды управления пользователями:",
-            "   - /list_engineers",
-            "   - /add_engineer <ID>",
-            "   - /remove_engineer <ID>",
             "",
             "   Функции инженера также доступны.",
             f"- /start - Главное меню.",

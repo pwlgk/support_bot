@@ -3,7 +3,6 @@ import logging
 from html import escape
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram import Router, types, F, Bot
-# --- ИЗМЕНЕНО: Добавлен импорт StateFilter ---
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,24 +32,21 @@ all_create_request_states = ( # Используем кортеж для неи�
 )
 
 # --- Обработчик отмены создания заявки (ПЕРВЫЙ) ---
-# --- ИЗМЕНЕНО: Используем StateFilter ---
 @router.message(F.text == CANCEL_BTN_TEXT, StateFilter(*all_create_request_states))
 async def cancel_request_creation(message: types.Message, state: FSMContext, session: AsyncSession):
     user_id = message.from_user.id
     current_state = await state.get_state()
-    # --- ИЗМЕНЕНО: Добавлена более строгая проверка состояния (хотя StateFilter должен это гарантировать) ---
     if current_state is not None and current_state in all_create_request_states:
         logging.info(f"User {user_id} cancelled request creation from state {current_state}")
         await state.clear()
         db_user = await get_user(session, user_id)
-        user_role = db_user.role if db_user else UserRole.CLIENT # или другая логика по умолчанию
+        user_role = db_user.role if db_user else UserRole.CLIENT 
         await message.answer(
             "Действие отменено. Создание заявки прервано.",
             reply_markup=get_main_menu_keyboard(user_role)
         )
     else:
          logging.debug(f"User {user_id} sent cancel text '{CANCEL_BTN_TEXT}' but was not in a relevant state ({current_state}). Filter should have caught this.")
-         # Ответ пользователю в этом случае не обязателен, т.к. он не должен сюда попадать
 
 
 # --- Шаг 1: Начало создания заявки -> Запрос ФИО ---
@@ -59,7 +55,6 @@ async def cancel_request_creation(message: types.Message, state: FSMContext, ses
 async def start_create_request(message: types.Message, state: FSMContext, session: AsyncSession):
     user_id = message.from_user.id
     logging.info(f"User {user_id} starting detailed request creation.")
-    # Попробуем предзаполнить ФИО из профиля пользователя в БД
     db_user = await get_user(session, user_id)
     prefilled_name = ""
     if db_user:
@@ -67,19 +62,14 @@ async def start_create_request(message: types.Message, state: FSMContext, sessio
         l_name = db_user.last_name or ""
         prefilled_name = f"{f_name} {l_name}".strip()
 
-    # Сохраняем предзаполненное имя (или пустое) в состояние
     await state.update_data(full_name=prefilled_name if prefilled_name else None)
 
     await state.set_state(CreateRequest.waiting_for_full_name)
     question = "Пожалуйста, введите ваше ФИО:"
-    # Убрано лишнее условие, так как оно делало то же самое
-    # if prefilled_name:
-    #     question = f"Пожалуйста, введите ваше ФИО:"
 
     await message.answer(question, reply_markup=get_cancel_keyboard())
 
 # --- Шаг 2: Получение ФИО -> Запрос Корпуса ---
-# --- ИЗМЕНЕНО: Добавлен фильтр F.text != CANCEL_BTN_TEXT ---
 @router.message(CreateRequest.waiting_for_full_name, F.text, F.text != CANCEL_BTN_TEXT)
 async def process_full_name(message: types.Message, state: FSMContext):
     full_name = message.text.strip()
@@ -93,7 +83,6 @@ async def process_full_name(message: types.Message, state: FSMContext):
     await message.answer("В каком корпусе возникла проблема? (Например: Корпус 1, АБК, Главный)")
 
 # --- Шаг 3: Получение Корпуса -> Запрос Кабинета ---
-# --- ИЗМЕНЕНО: Добавлен фильтр F.text != CANCEL_BTN_TEXT ---
 @router.message(CreateRequest.waiting_for_building, F.text, F.text != CANCEL_BTN_TEXT)
 async def process_building(message: types.Message, state: FSMContext):
     building = message.text.strip()
@@ -107,7 +96,6 @@ async def process_building(message: types.Message, state: FSMContext):
     await message.answer("Укажите номер кабинета (или название помещения):")
 
 # --- Шаг 4: Получение Кабинета -> Запрос Описания ---
-# --- ИЗМЕНЕНО: Добавлен фильтр F.text != CANCEL_BTN_TEXT ---
 @router.message(CreateRequest.waiting_for_room, F.text, F.text != CANCEL_BTN_TEXT)
 async def process_room(message: types.Message, state: FSMContext):
     room = message.text.strip()
@@ -121,11 +109,10 @@ async def process_room(message: types.Message, state: FSMContext):
     await message.answer("Теперь опишите проблему как можно подробнее:")
 
 # --- Шаг 5: Получение Описания -> Запрос ПК/Инв. номера ---
-# --- ИЗМЕНЕНО: Добавлен фильтр F.text != CANCEL_BTN_TEXT ---
 @router.message(CreateRequest.waiting_for_description, F.text, F.text != CANCEL_BTN_TEXT)
 async def process_description(message: types.Message, state: FSMContext):
-    description = message.text # .strip() не нужен, описание может содержать пробелы по краям
-    if len(description) < 10: # Немного увеличим минимальную длину
+    description = message.text 
+    if len(description) < 10: 
         await message.answer("Описание слишком короткое. Пожалуйста, опишите проблему подробнее:")
         return
     await state.update_data(description=description)
@@ -140,21 +127,15 @@ async def process_description(message: types.Message, state: FSMContext):
     )
 
 # --- Шаг 6: Получение ПК/Инв. номера (или Пропуск) -> Запрос Телефона ---
-# Фильтр F.text ловит и текст номера, и кнопку "Пропустить"
-# Обработчик отмены должен сработать раньше для текста "❌ Отмена"
 @router.message(CreateRequest.waiting_for_pc_number, F.text)
 async def process_pc_number(message: types.Message, state: FSMContext):
-    # --- ИЗМЕНЕНО: Добавлена явная проверка на текст Отмены (на всякий случай) ---
     if message.text == CANCEL_BTN_TEXT:
         logging.warning(f"Cancel text '{CANCEL_BTN_TEXT}' reached process_pc_number handler. This should ideally be caught by cancel_request_creation.")
-        # Не вызываем отмену отсюда, так как должен сработать отдельный хендлер
-        return # Просто выходим, чтобы не обрабатывать "Отмена" как номер
+        return 
 
     pc_number = None # По умолчанию None
-    # --- ИЗМЕНЕНО: Условие для получения номера ---
-    if message.text != SKIP_BTN_TEXT: # Если это не кнопка "Пропустить", считаем текстом номера
+    if message.text != SKIP_BTN_TEXT: 
         pc_number = message.text.strip()
-        # Простая валидация на пустую строку после strip()
         if not pc_number:
              await message.answer("Инвентарный номер не может быть пустым. Введите номер, нажмите 'Пропустить' или 'Отмена'.")
              return
@@ -169,17 +150,15 @@ async def process_pc_number(message: types.Message, state: FSMContext):
 
 
 # --- Шаг 7: Получение Телефона -> Сохранение заявки и Уведомление ---
-# --- ИЗМЕНЕНО: Добавлен фильтр F.text != CANCEL_BTN_TEXT ---
 @router.message(CreateRequest.waiting_for_phone, F.text, F.text != CANCEL_BTN_TEXT)
 async def process_phone_and_finish(message: types.Message, state: FSMContext, session: AsyncSession, bot: Bot):
     phone_number = message.text.strip()
-    # --- ИЗМЕНЕНО: Улучшена валидация телефона (минимальная длина) ---
-    if not phone_number or len(phone_number) < 5: # Увеличим минимальную длину для телефона
-        await message.answer("Пожалуйста, введите корректный номер телефона (хотя бы 5 символов):")
+    if not phone_number or len(phone_number) <= 3:
+        await message.answer("Пожалуйста, введите корректный номер телефона (хотя бы 3 символa):")
         return
 
     await state.update_data(contact_phone=phone_number)
-    user_data = await state.get_data() # Получаем все собранные данные
+    user_data = await state.get_data() 
     requester_id = message.from_user.id
     logging.info(f"User {requester_id} provided phone: {phone_number}. Data collected: {user_data}")
 
@@ -203,7 +182,7 @@ async def process_phone_and_finish(message: types.Message, state: FSMContext, se
             room=user_data.get('room', 'Не указан'),
             description=user_data.get('description', 'Описание отсутствует'),
             pc_number=user_data.get('pc_number'),
-            contact_phone=user_data.get('contact_phone') # Используем сохраненный в state
+            contact_phone=user_data.get('contact_phone') 
         )
         logging.info(f"Request {new_request.id} created for user {requester_id}")
 
@@ -215,7 +194,7 @@ async def process_phone_and_finish(message: types.Message, state: FSMContext, se
             f"<b>Корпус:</b> {escape(new_request.building)}\n"
             f"<b>Кабинет:</b> {escape(new_request.room)}\n"
             f"{pc_text}"
-            f"<b>Телефон:</b> {escape(new_request.contact_phone or 'Не указан')}\n\n" # Используем данные из БД
+            f"<b>Телефон:</b> {escape(new_request.contact_phone or 'Не указан')}\n\n" 
             f"<b>Описание проблемы:</b>\n{escape(new_request.description[:150])}...\n\n"
             "Ожидайте уведомление о принятии заявки в работу."
         )
@@ -236,7 +215,7 @@ async def process_phone_and_finish(message: types.Message, state: FSMContext, se
                 f"🔔 Новая заявка №{new_request.id} от {user_mention}\n\n"
                 f"<b>ФИО:</b> {escape(new_request.full_name or 'Не указано')}\n"
                 f"<b>Корпус:</b> {escape(new_request.building)}, <b>Каб:</b> {escape(new_request.room)}{pc_notify_text}\n"
-                f"<b>Телефон:</b> {escape(new_request.contact_phone or 'Не указан')}\n" # Используем данные из БД
+                f"<b>Телефон:</b> {escape(new_request.contact_phone or 'Не указан')}\n" 
                 f"<b>Описание:</b> {escape(new_request.description[:200])}..."
             )
 
@@ -262,35 +241,26 @@ async def process_phone_and_finish(message: types.Message, state: FSMContext, se
             reply_markup=get_main_menu_keyboard(user_role)
         )
 
-    await state.clear() # Очищаем состояние после успешного создания или ошибки
+    await state.clear() 
 
-# --- Обработчики для невалидного ввода (В КОНЦЕ) ---
 
-# Ловит текстовые сообщения, которые не являются ни "Пропустить", ни "Отмена" в состояниях создания заявки
 @router.message(
-    StateFilter(*all_create_request_states), # Ловим во всех состояниях создания
+    StateFilter(*all_create_request_states), 
     F.text, # Убеждаемся, что это текст
-    # --- ИЗМЕНЕНО: Используем F.text.notin_ для исключения кнопок ---
-    F.text.notin_({SKIP_BTN_TEXT, CANCEL_BTN_TEXT}) # Убеждаемся, что текст НЕ "Пропустить" и НЕ "Отмена"
+    F.text.notin_({SKIP_BTN_TEXT, CANCEL_BTN_TEXT}) 
 )
 async def process_invalid_text_input(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
     logging.warning(f"User {message.from_user.id} sent invalid text '{message.text}' in state {current_state}")
-    # На шаге ПК/инв. номера ожидаем либо номер, либо "Пропустить"
     if current_state == CreateRequest.waiting_for_pc_number.state:
         await message.answer("Пожалуйста, отправьте текст (инв. номер), нажмите 'Пропустить' или 'Отмена'.")
     else:
         # Общий ответ для других текстовых шагов
         await message.answer("Пожалуйста, введите запрашиваемые данные или нажмите 'Отмена'.")
 
-# Ловит НЕ текстовые сообщения в состояниях создания заявки
-@router.message(StateFilter(*all_create_request_states), ~F.text) # ~F.text означает "не текст"
+@router.message(StateFilter(*all_create_request_states), ~F.text) 
 async def process_invalid_content_input(message: types.Message, state: FSMContext):
      current_state = await state.get_state()
      logging.warning(f"User {message.from_user.id} sent non-text content ({message.content_type}) in state {current_state}")
      await message.answer("Пожалуйста, отправьте текстовое сообщение или нажмите 'Отмена'.")
 
-# --- УДАЛЕНО: Старый обработчик process_invalid_input заменен двумя новыми выше ---
-# @router.message(lambda msg: msg.text != SKIP_BTN_TEXT, *invalid_input_states)
-# async def process_invalid_input(message: types.Message, state: FSMContext):
-#     # ...
