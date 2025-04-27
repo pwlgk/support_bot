@@ -1,7 +1,7 @@
 # bot/middlewares/db.py
 from typing import Callable, Dict, Any, Awaitable
 from aiogram import BaseMiddleware
-from aiogram.types import TelegramObject # Базовый тип для событий (Message, CallbackQuery)
+from aiogram.types import TelegramObject 
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 class DbSessionMiddleware(BaseMiddleware):
@@ -31,10 +31,8 @@ class DbSessionMiddleware(BaseMiddleware):
         async with self.session_pool() as session:
             # Добавляем объект сессии в словарь data под ключом 'session'.
             # Имя ключа ('session') должно совпадать с именем аргумента
-            # в хендлере (например, session: AsyncSession).
             data['session'] = session
 
-            # Вызываем следующий обработчик в цепочке, передавая ему событие и обновленные данные
             result = await handler(event, data)
 
         # Сессия автоматически коммитится (если не было ошибок) или

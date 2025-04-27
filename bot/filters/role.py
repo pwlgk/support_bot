@@ -20,15 +20,15 @@ class RoleFilter(BaseFilter):
 
     async def __call__(
         self,
-        event: Union[Message, CallbackQuery], # Событие может быть сообщением или коллбэком
-        session: AsyncSession # Получаем сессию через DI (middleware)
+        event: Union[Message, CallbackQuery], 
+        session: AsyncSession 
     ) -> bool:
         """
         Проверяет, есть ли у пользователя одна из разрешенных ролей.
         """
         user = event.from_user
         if not user:
-            return False # Не удалось определить пользователя
+            return False 
 
         # Получаем пользователя из БД
         db_user = await get_user(session, user.id)

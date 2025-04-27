@@ -7,14 +7,12 @@ import random
 from pathlib import Path
 from datetime import datetime, timedelta
 
-# --- Добавляем корень проекта в sys.path ---
 project_root = Path(__file__).resolve().parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from dotenv import load_dotenv
 
-# --- Импорты из вашего проекта ---
 try:
     from db.database import AsyncSessionFactory, engine, Base
     from db.crud import (
@@ -42,7 +40,6 @@ if not load_dotenv():
 
 # --- ТЕСТОВЫЕ ДАННЫЕ ---
 
-# --- Пользователи (Расширено до 20) ---
 TEST_USERS = [
     # Клиенты (10)
     {"id": 111111111, "first_name": "Тест", "last_name": "Клиентов", "username": "testclient1", "role": UserRole.CLIENT},
@@ -71,51 +68,29 @@ TEST_USERS = [
     {"id": 202020202, "first_name": "Второй", "last_name": "Админ", "username": "admin_two", "role": UserRole.ADMIN},
 ]
 
-# --- ID списки (Обновлено) ---
 CLIENT_IDS = [u['id'] for u in TEST_USERS if u['role'] == UserRole.CLIENT]
 ENGINEER_IDS = [u['id'] for u in TEST_USERS if u['role'] == UserRole.ENGINEER]
 
-# --- Заявки (Расширено до 20) ---
 TEST_REQUESTS_DATA = [
-    # 1. WAITING
     {"description": "Не работает принтер HP LaserJet", "full_name": "Тестов Тест", "building": "Корпус А", "room": "101", "pc_number": "INV-PRN-001", "contact_phone": "+79001112233", "status": RequestStatus.WAITING},
-    # 2. WAITING
     {"description": "Синий экран", "full_name": "Заявкина Анна", "building": "АБК", "room": "205", "pc_number": "COMP-ACC-05", "contact_phone": "55-66-77", "status": RequestStatus.WAITING},
-    # 3. IN_PROGRESS (Eng 0)
     {"description": "Установить MS Office", "full_name": "Петров Петр", "building": "Корпус Б", "room": "310", "pc_number": None, "contact_phone": "+79119876543", "status": RequestStatus.IN_PROGRESS, "assign_to_engineer_index": 0},
-    # 4. IN_PROGRESS (Eng 1)
     {"description": "Медленно работает 1С", "full_name": "Тестов Тест", "building": "Корпус А", "room": "102", "pc_number": "COMP-MAIN-15", "contact_phone": "+79001112244", "status": RequestStatus.IN_PROGRESS, "assign_to_engineer_index": 1},
-    # 5. ARCHIVED (Eng 0)
     {"description": "Заменить картридж", "full_name": "Заявкина Анна", "building": "АБК", "room": "206", "pc_number": "INV-PRN-005", "contact_phone": "55-66-78", "status": RequestStatus.ARCHIVED, "assign_to_engineer_index": 0},
-    # 6. ARCHIVED (Eng 1)
     {"description": "Проложить кабель", "full_name": "Петров Петр", "building": "Корпус Б", "room": "311", "pc_number": None, "contact_phone": "+79119876543", "status": RequestStatus.ARCHIVED, "assign_to_engineer_index": 1},
-    # 7. WAITING
     {"description": "Сломалась мышка", "full_name": "Иванов Иван", "building": "Корпус В", "room": "401", "pc_number": None, "contact_phone": "+79221112233", "status": RequestStatus.WAITING},
-    # 8. ARCHIVED (Eng 2)
     {"description": "Не открывается сайт", "full_name": "Сидорова Мария", "building": "АБК", "room": "205", "pc_number": "COMP-ACC-06", "contact_phone": "55-66-99", "status": RequestStatus.ARCHIVED, "assign_to_engineer_index": 2},
-    # 9. WAITING
     {"description": "Проблема с доступом к папке", "full_name": "Кузнецов Алексей", "building": "Корпус Б", "room": "303", "pc_number": "COMP-ENG-01", "contact_phone": "+79339876511", "status": RequestStatus.WAITING},
-    # 10. WAITING
     {"description": "Переустановить Windows", "full_name": "Васильева Ольга", "building": "Удаленно", "room": "-", "pc_number": "LAPTOP-01", "contact_phone": "11-22-33", "status": RequestStatus.WAITING},
-    # 11. IN_PROGRESS (Eng 3)
     {"description": "Настроить VPN", "full_name": "Павлов Дмитрий", "building": "Корпус Г", "room": "50", "pc_number": None, "contact_phone": "+79441234567", "status": RequestStatus.IN_PROGRESS, "assign_to_engineer_index": 3},
-    # 12. IN_PROGRESS (Eng 4)
     {"description": "Зависает Excel", "full_name": "Новикова Екатерина", "building": "АБК", "room": "210", "pc_number": "COMP-ACC-07", "contact_phone": "55-77-88", "status": RequestStatus.IN_PROGRESS, "assign_to_engineer_index": 4},
-    # 13. IN_PROGRESS (Eng 5)
     {"description": "Не печатает из 1С", "full_name": "Морозов Михаил", "building": "Корпус Б", "room": "305", "pc_number": "COMP-MAN-02", "contact_phone": "+79558765432", "status": RequestStatus.IN_PROGRESS, "assign_to_engineer_index": 5},
-    # 14. ARCHIVED (Eng 6)
     {"description": "Установить антивирус", "full_name": "Иванов Иван", "building": "Корпус В", "room": "402", "pc_number": "COMP-DEV-03", "contact_phone": "+79221112244", "status": RequestStatus.ARCHIVED, "assign_to_engineer_index": 6},
-    # 15. ARCHIVED (Eng 7)
     {"description": "Подключить монитор", "full_name": "Сидорова Мария", "building": "АБК", "room": "211", "pc_number": "COMP-ACC-08", "contact_phone": "55-66-00", "status": RequestStatus.ARCHIVED, "assign_to_engineer_index": 7},
-    # 16. ARCHIVED (Eng 0)
     {"description": "Обновить драйверы", "full_name": "Кузнецов Алексей", "building": "Корпус Б", "room": "304", "pc_number": "COMP-ENG-02", "contact_phone": "+79339876522", "status": RequestStatus.ARCHIVED, "assign_to_engineer_index": 0},
-    # 17. WAITING
     {"description": "Не работает сканер ШК", "full_name": "Васильева Ольга", "building": "Склад", "room": "1", "pc_number": "SCAN-01", "contact_phone": "11-22-44", "status": RequestStatus.WAITING},
-    # 18. IN_PROGRESS (Eng 1)
     {"description": "Заменить клавиатуру", "full_name": "Павлов Дмитрий", "building": "Корпус Г", "room": "55", "pc_number": "COMP-SALE-01", "contact_phone": "+79441234577", "status": RequestStatus.IN_PROGRESS, "assign_to_engineer_index": 1},
-    # 19. ARCHIVED (Eng 2)
     {"description": "Почистить ПК от пыли", "full_name": "Новикова Екатерина", "building": "АБК", "room": "215", "pc_number": "COMP-ACC-09", "contact_phone": "55-77-99", "status": RequestStatus.ARCHIVED, "assign_to_engineer_index": 2},
-    # 20. WAITING
     {"description": "Ошибка сохранения Word", "full_name": "Морозов Михаил", "building": "Корпус Б", "room": "306", "pc_number": "COMP-MAN-03", "contact_phone": "+79558765411", "status": RequestStatus.WAITING},
 ]
 
@@ -151,7 +126,6 @@ async def add_test_data():
             for user_data in TEST_USERS:
                 user_id = user_data['id']
                 role_to_set = user_data['role']
-                # log.info(f"Обработка пользователя ID: {user_id} ({user_data['first_name']}) с ролью {role_to_set.name}")
                 try:
                     user_obj, created = await get_or_create_user(
                         session=session, user_id=user_id, first_name=user_data['first_name'],
@@ -162,18 +136,12 @@ async def add_test_data():
                         failed_users += 1
                         continue
 
-                    # log_prefix = "Создан" if created else "Обновлен"
-                    # log.info(f"{log_prefix} пользователь ID: {user_id}")
-
                     if user_obj.role != role_to_set:
-                        # log.info(f"Установка роли {role_to_set.name} для ID: {user_id}")
                         updated_user = await set_user_role(session, user_id, role_to_set)
                         if updated_user:
-                             pass # log.info(f"Роль {updated_user.role.name} успешно установлена для ID: {user_id}")
+                             pass 
                         else:
                             log.warning(f"Не удалось установить роль {role_to_set.name} для ID: {user_id}")
-                    # else:
-                        # log.info(f"Пользователь ID: {user_id} уже имеет роль {role_to_set.name}.")
 
                     processed_users += 1
                 except Exception as e:
@@ -207,7 +175,6 @@ async def add_test_data():
                         building=req_data['building'], room=req_data['room'], description=req_data['description'],
                         pc_number=req_data.get('pc_number'), contact_phone=req_data.get('contact_phone')
                     )
-                    # log.info(f"Заявка #{new_request.id} создана (статус WAITING)")
                     request_ids[i] = new_request.id
 
                     target_status = req_data['status']
@@ -221,10 +188,8 @@ async def add_test_data():
                             if not eng_exists:
                                  log.warning(f"Инженер с ID {engineer_id} не найден для заявки #{current_request_obj.id}. Невозможно назначить.")
                             else:
-                                # log.info(f"Назначение инженера {engineer_id} на заявку #{current_request_obj.id}")
                                 accepted_req = await accept_request(session, current_request_obj.id, engineer_id)
                                 if accepted_req:
-                                    # log.info(f"Заявка #{accepted_req.id} принята (статус IN_PROGRESS)")
                                     current_request_obj = accepted_req # Обновляем объект
                                 else:
                                     log.warning(f"Не удалось принять заявку #{current_request_obj.id} инженером {engineer_id}")
@@ -234,10 +199,8 @@ async def add_test_data():
                     if target_status == RequestStatus.ARCHIVED and current_request_obj.status == RequestStatus.IN_PROGRESS:
                         engineer_id_to_complete = current_request_obj.engineer_id
                         if engineer_id_to_complete:
-                            # log.info(f"Завершение заявки #{current_request_obj.id} инженером {engineer_id_to_complete}")
                             completed_req = await complete_request(session, current_request_obj.id, engineer_id_to_complete)
                             if completed_req:
-                                # log.info(f"Заявка #{completed_req.id} завершена (статус ARCHIVED)")
                                 current_request_obj = completed_req
                             else:
                                 log.warning(f"Не удалось завершить заявку #{current_request_obj.id}")
@@ -258,7 +221,6 @@ async def add_test_data():
                          # current_request_obj.created_at = (now - timedelta(days=days_ago_created)).replace(tzinfo=None)
                          session.add(current_request_obj) # Добавляем для сохранения изменений дат
                          await session.commit()
-                         # log.info(f"Для архивной заявки #{current_request_obj.id} установлены тестовые даты.")
 
                     processed_requests += 1
 
@@ -292,13 +254,11 @@ if __name__ == "__main__":
     # print("\n!!! ВНИМАНИЕ: Сейчас база данных будет очищена и заполнена тестовыми данными.")
     # print("!!! Прервите выполнение (Ctrl+C), если это нежелательно.")
     # try:
-    #    # Даем время на отмену
     #    asyncio.sleep(5)
     # except KeyboardInterrupt:
     #    print("\nОтмена операции.")
     #    sys.exit(0)
     #
-    # # Очистка перед заполнением (опционально)
     # async def drop_create():
     #      log.info("Удаление и создание таблиц...")
     #      async with engine.begin() as conn:

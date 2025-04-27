@@ -1,7 +1,7 @@
 # bot/keyboards/reply.py
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
-from db.models import UserRole # Импортируем UserRole для проверки
+from db.models import UserRole 
 
 NEW_REQUEST_BTN_TEXT = "📝 Создать заявку"
 MY_REQUESTS_BTN_TEXT = "📄 Мои заявки"
@@ -50,7 +50,6 @@ def get_cancel_keyboard() -> ReplyKeyboardMarkup:
 def get_skip_cancel_keyboard() -> ReplyKeyboardMarkup:
     """Создает клавиатуру с кнопками Пропустить и Отмена."""
     builder = ReplyKeyboardBuilder()
-    # Кнопки в один ряд
     builder.row(
         KeyboardButton(text=SKIP_BTN_TEXT),
         KeyboardButton(text=CANCEL_BTN_TEXT)

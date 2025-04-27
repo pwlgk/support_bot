@@ -8,7 +8,6 @@ from .models import RequestStatus, User, UserRole, Request
 from sqlalchemy.orm import selectinload
 
 # --- Функции для пользователей (get_user, set_user_role, get_all_users, etc.) ---
-# (Оставляем их как есть, они нужны для других частей админки)
 
 async def get_user(session: AsyncSession, user_id: int) -> User | None:
     """Получает пользователя по Telegram ID."""
@@ -216,7 +215,7 @@ async def get_all_in_progress_requests(
         base_query = base_query.order_by(Request.created_at.asc())
     elif sort_by == 'created_desc':
          base_query = base_query.order_by(Request.created_at.desc())
-    else: # accepted_asc по умолчанию (принятые раньше - сверху)
+    else: 
         base_query = base_query.order_by(Request.accepted_at.asc())
 
     # Запрос для количества
@@ -261,7 +260,7 @@ async def get_engineer_requests(
 
     if sort_by == 'created_desc':
          select_stmt = select_stmt.order_by(Request.created_at.desc())
-    else: # accepted_asc по умолчанию
+    else: 
         select_stmt = select_stmt.order_by(Request.accepted_at.asc())
 
     paginated_stmt = select_stmt.limit(limit).offset(offset)
@@ -317,7 +316,6 @@ async def get_archived_requests(
 
     return requests_list, total_count
 
-# --- Функция get_client_requests остается без изменений ---
 async def get_client_requests(session: AsyncSession, requester_id: int) -> list[Request]:
     """
     Получает список НЕ архивных и НЕ отмененных заявок для конкретного клиента.

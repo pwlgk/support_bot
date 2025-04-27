@@ -1,11 +1,11 @@
 # docker-compose.yml
 
-version: '3.9' # Используем одну из свежих версий
+version: '3.9'
 
 services:
   # Сервис базы данных PostgreSQL
   db:
-    image: postgres:15 # Выберите нужную версию PostgreSQL (e.g., 14, 15, 16)
+    image: postgres:15
     container_name: support_postgres_db
     restart: unless-stopped # Перезапускать, если не остановлен вручную
     volumes:
@@ -25,9 +25,9 @@ services:
       timeout: 5s
       retries: 5
 
-  # Сервис вашего Telegram бота
+  # Сервис Telegram бота
   bot:
-    build: . # Собирать образ из Dockerfile в текущей директории
+    build: . 
     container_name: support_telegram_bot
     restart: unless-stopped
     env_file:
@@ -35,10 +35,6 @@ services:
     depends_on:
       db: # Запускать бота только после того, как БД будет готова
         condition: service_healthy # Ждать успешного healthcheck'а от сервиса 'db'
-    # Если вы используете Alembic для миграций БД при старте,
-    # раскомментируйте и настройте команду:
-    # command: bash -c "alembic upgrade head && python main.py"
-    # Убедитесь, что alembic установлен и настроен в вашем проекте
 
 # Определяем именованный volume для хранения данных PostgreSQL
 volumes:

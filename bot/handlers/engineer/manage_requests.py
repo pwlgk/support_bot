@@ -35,11 +35,11 @@ from bot.keyboards.inline.requests_inline import (
 from bot.keyboards.inline.engineer_inline import get_engineer_main_menu
 
 # Константы пагинации
-ENG_ACTIVE_PAGE_SIZE = 5 # Уменьшим для примера
-ENG_HISTORY_PAGE_SIZE = 5 # Уменьшим для примера
+ENG_ACTIVE_PAGE_SIZE = 5 
+ENG_HISTORY_PAGE_SIZE = 5 
 
 router = Router()
-# Применяем фильтр Инженера ко всем хендлерам этого роутера
+
 router.message.filter(RoleFilter(UserRole.ENGINEER))
 router.callback_query.filter(RoleFilter(UserRole.ENGINEER))
 
@@ -81,19 +81,16 @@ async def view_new_requests(event: types.Message | types.CallbackQuery, session:
         builder.row(InlineKeyboardButton(text="⬅️ Главное меню", callback_data="back_to_main_menu_eng"))
         keyboard = builder.as_markup()
 
-    # Определяем, как ответить: новым сообщением или редактированием
     if isinstance(event, types.Message):
         await event.answer(text, reply_markup=keyboard)
     elif isinstance(event, types.CallbackQuery) and event.message:
-        await event.answer() # Отвечаем на коллбэк
+        await event.answer() 
         try:
             await event.message.edit_text(text, reply_markup=keyboard)
         except TelegramBadRequest: pass
         except Exception as e: logging.error(f"Error editing message for new requests view: {e}", exc_info=True)
 
 
-# --- Просмотр СВОИХ АКТИВНЫХ заявок (С ПАГИНАЦИЕЙ) ---
-# Обработчик для первого входа (по кнопке/команде)
 @router.message(F.text == MY_ASSIGNED_REQUESTS_BTN_TEXT)
 @router.message(Command('my_requests'))
 async def view_my_active_requests_first(message: types.Message, session: AsyncSession):
@@ -156,7 +153,6 @@ async def view_my_active_requests_page(callback: types.CallbackQuery, callback_d
     text = f"🛠️ Мои заявки в работе (Всего: {total_count}):"
     if total_count == 0 and current_page == 0: # Если последняя заявка была завершена
          text = "👍 У вас больше нет заявок в работе."
-         # Клавиатура уже содержит кнопку "Главное меню"
 
     await callback.answer()
     try:
@@ -196,7 +192,6 @@ async def view_history_first(message: types.Message, session: AsyncSession):
     text = f"📚 История выполненных вами заявок (Всего: {total_count}):"
     if total_count == 0:
          text = "🗄️ Ваша история выполненных заявок пока пуста."
-         # Клавиатура уже содержит кнопку "Главное меню"
 
     await message.answer(text, reply_markup=keyboard)
 
@@ -209,7 +204,6 @@ async def view_history_page(callback: types.CallbackQuery, callback_data: Histor
     current_sort = callback_data.sort_by
     logging.info(f"Engineer {engineer_id} requested own history page {current_page} (sort: {current_sort}).")
 
-    # Проверка роли здесь избыточна, так как фильтр стоит на весь роутер
 
     if current_page < 0: await callback.answer(); return
 
@@ -236,7 +230,6 @@ async def view_history_page(callback: types.CallbackQuery, callback_data: Histor
     text = f"📚 История выполненных вами заявок (Всего: {total_count}):"
     if total_count == 0 and current_page == 0:
          text = "🗄️ Ваша история выполненных заявок пуста."
-         # Клавиатура уже содержит кнопку "Главное меню"
 
     await callback.answer()
     try:
@@ -249,13 +242,12 @@ async def view_history_page(callback: types.CallbackQuery, callback_data: Histor
     except Exception as e: logging.error(f"Error editing message for engineer history pagination: {e}", exc_info=True)
 
 
-# --- ПРОСМОТР ДЕТАЛЕЙ ЗАЯВКИ (общий для разных списков) ---
 
 async def show_request_details(
     callback: types.CallbackQuery,
     request_id: int,
     session: AsyncSession,
-    view_mode: str # 'new', 'active_eng', 'archive'
+    view_mode: str 
 ):
     """Отображает детали заявки и соответствующие кнопки."""
     user_id = callback.from_user.id
@@ -267,10 +259,8 @@ async def show_request_details(
         # Пытаемся обновить список, из которого пришел пользователь
         if view_mode == 'new':
             await view_new_requests(callback, session)
-        # Для пагинированных списков обновление сложнее без передачи страницы
-        # Можно просто закрыть окно деталей или отправить сообщение об ошибке
         try:
-            if callback.message: await callback.message.delete() # Удаляем сообщение с деталями
+            if callback.message: await callback.message.delete() 
         except Exception: pass
         return
 
@@ -345,8 +335,6 @@ async def show_request_details(
     except Exception as e: logging.error(f"Error editing message for request view {request_id}: {e}", exc_info=True)
 
 
-# --- ОБРАБОТЧИКИ ДЕЙСТВИЙ С ЗАЯВКАМИ ---
-
 # Просмотр новой заявки (из списка view_new_requests)
 @router.callback_query(RequestActionCallback.filter(F.action == "view"))
 async def cq_view_request(callback: types.CallbackQuery, callback_data: RequestActionCallback, session: AsyncSession):
@@ -413,8 +401,6 @@ async def cq_complete_request(callback: types.CallbackQuery, callback_data: Requ
             logging.error(f"Failed to send completion notification to client {completed_request.requester_id}: {e}")
     else:
         await callback.answer("⚠️ Не удалось завершить заявку (проверьте статус).", show_alert=True)
-        # После неудачного завершения можно просто показать детали еще раз,
-        # чтобы пользователь увидел актуальный статус
         try:
             await show_request_details(callback, request_id, session, view_mode='active_eng')
         except Exception as e:

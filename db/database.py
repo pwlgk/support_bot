@@ -1,7 +1,5 @@
 # db/database.py
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-# --- ИЗМЕНИТЬ ИМПОРТЫ ---
-# Убираем declarative_base, импортируем DeclarativeBase
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from config import DATABASE_URL

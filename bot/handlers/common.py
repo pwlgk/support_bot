@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.crud import get_or_create_user, get_user
 from bot.keyboards.reply import (
-    get_main_menu_keyboard, # Больше не импортируем тексты кнопок отсюда
+    get_main_menu_keyboard,
     get_cancel_keyboard,
     CANCEL_BTN_TEXT
 )
@@ -21,8 +21,7 @@ from db.models import UserRole # Для определения роли в help
 router = Router()
 
 @router.message(CommandStart())
-async def cmd_start(message: types.Message, session: AsyncSession, state: FSMContext): # Добавили state для очистки
-    # Сбросим состояние FSM на всякий случай, если пользователь был в процессе
+async def cmd_start(message: types.Message, session: AsyncSession, state: FSMContext): 
     await state.clear()
 
     tg_user = message.from_user
@@ -47,7 +46,6 @@ async def cmd_start(message: types.Message, session: AsyncSession, state: FSMCon
     keyboard = get_main_menu_keyboard(db_user.role)
     await message.answer(text, reply_markup=keyboard)
 
-# Хендлер отмены остается без изменений
 @router.message(F.text == CANCEL_BTN_TEXT)
 async def cancel_handler(message: types.Message, state: FSMContext, session: AsyncSession): # Добавили session
     current_state = await state.get_state()
@@ -73,8 +71,6 @@ async def cmd_help(message: types.Message, session: AsyncSession):
     Обработчик команды /help. Показывает разную справку в зависимости от роли.
     """
     user_id = message.from_user.id
-    # Получаем пользователя и его роль
-    # Используем get_user, т.к. пользователь точно существует, раз прислал /help
     db_user = await get_user(session, user_id)
 
     # Базовый текст

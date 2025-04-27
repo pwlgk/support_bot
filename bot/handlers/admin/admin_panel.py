@@ -9,11 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.filters.role import RoleFilter
-from db.models import UserRole, User, Request, RequestStatus # Добавили RequestStatus
+from db.models import UserRole, User, Request, RequestStatus 
 # Импорты для показа списков
 from db.crud import (
     get_all_in_progress_requests, get_all_users, get_archived_requests,
-    get_request, get_user, set_user_role # Используем get_request
+    get_request, get_user, set_user_role 
 )
 from bot.keyboards.inline.admin_inline import (
     get_admin_main_menu, AdminActiveNavCallback, create_admin_active_requests_keyboard,
@@ -25,9 +25,9 @@ from bot.keyboards.inline.requests_inline import (
 )
 
 # Константы пагинации
-ADMIN_USERS_PAGE_SIZE = 5
-ADMIN_ACTIVE_PAGE_SIZE = 5 # Уменьшено для теста
-ADMIN_HISTORY_PAGE_SIZE = 5 # Уменьшено для теста
+ADMIN_USERS_PAGE_SIZE = 10
+ADMIN_ACTIVE_PAGE_SIZE = 10
+ADMIN_HISTORY_PAGE_SIZE = 10
 
 
 router = Router()
@@ -43,10 +43,9 @@ async def cmd_admin(message: types.Message):
 
 # --- ОБРАБОТЧИКИ КНОПОК ГЛАВНОГО МЕНЮ АДМИНКИ И ПАГИНАЦИИ ---
 
-# --- Управление пользователями (пагинация работает) ---
 @router.callback_query(AdminUserManageCallback.filter(F.action == "list_page"))
 async def cq_admin_users_list(callback: types.CallbackQuery, callback_data: AdminUserManageCallback, session: AsyncSession):
-    # ... (код без изменений) ...
+    
     current_page = callback_data.page
     user_id = callback.from_user.id
     logging.info(f"Admin {user_id} requested users list page {current_page}.")
@@ -108,14 +107,14 @@ async def cq_admin_active_page(callback: types.CallbackQuery, callback_data: Adm
             # Если сообщение не изменилось, просто отвечаем на коллбэк
             await callback.answer()
             logging.debug("Admin active page: Message not modified.")
-            return # Важно выйти, чтобы не выполнять лишний callback.answer() ниже
+            return 
     except TelegramBadRequest:
         logging.debug("Admin active page: Message not modified (Caught TelegramBadRequest).")
         pass
     except Exception as e:
         logging.error(f"Error editing message for admin active pagination: {e}", exc_info=True)
 
-    await callback.answer() # Отвечаем на коллбэк в случае успешного редактирования или ошибки
+    await callback.answer() 
 
 
 # --- История выполненных (обработчик пагинации) ---
@@ -141,7 +140,6 @@ async def cq_admin_history_page(callback: types.CallbackQuery, callback_data: Hi
     archived_requests, total_count = await get_archived_requests(
         session=session, limit=ADMIN_HISTORY_PAGE_SIZE,
         offset=offset, sort_by=current_sort
-        # engineer_id НЕ передается
     )
     total_pages = math.ceil(total_count / ADMIN_HISTORY_PAGE_SIZE) if total_count > 0 else 0
 
@@ -160,7 +158,6 @@ async def cq_admin_history_page(callback: types.CallbackQuery, callback_data: Hi
     text = f"📚 История выполненных (Всего: {total_count}):"
     if total_count == 0 and current_page == 0:
          text = "🗄️ История выполненных заявок пуста."
-         # Клавиатура уже содержит кнопку "Назад в меню"
 
     try:
         if callback.message and (callback.message.text != text or callback.message.reply_markup != keyboard):
@@ -177,10 +174,10 @@ async def cq_admin_history_page(callback: types.CallbackQuery, callback_data: Hi
     await callback.answer()
 
 
-# --- Просмотр профиля пользователя (без изменений) ---
+# --- Просмотр профиля пользователя  ---
 @router.callback_query(AdminUserManageCallback.filter(F.action == "view"))
 async def cq_admin_view_user(callback: types.CallbackQuery, callback_data: AdminUserManageCallback, session: AsyncSession):
-    # ... (код без изменений) ...
+    
     target_user_id = callback_data.user_id
     current_list_page = callback_data.page
     admin_id = callback.from_user.id
@@ -211,10 +208,10 @@ async def cq_admin_view_user(callback: types.CallbackQuery, callback_data: Admin
     except TelegramBadRequest: pass
     except Exception as e: logging.error(f"Error editing message for user profile view: {e}", exc_info=True)
 
-# --- Смена роли пользователя (без изменений) ---
+# --- Смена роли пользователя  ---
 @router.callback_query(AdminUserManageCallback.filter(F.action == "set_role"))
 async def cq_admin_set_role(callback: types.CallbackQuery, callback_data: AdminUserManageCallback, session: AsyncSession):
-    # ... (код без изменений) ...
+    
     target_user_id = callback_data.user_id
     new_role_str = callback_data.new_role
     current_list_page = callback_data.page
@@ -253,14 +250,13 @@ async def cq_admin_view_active_request(callback: types.CallbackQuery, callback_d
         return
     if request.status != RequestStatus.IN_PROGRESS: # Используем Enum
         await callback.answer("⚠️ Заявка уже не активна.", show_alert=True)
-        # TODO: Обновить список активных заявок админа
         return
 
-    # Формирование текста (остается как есть)
+    # Формирование текста 
     engineer_name = f"{request.engineer.first_name} {request.engineer.last_name}".strip() if request.engineer else "Не назначен"
     client_name = f"{request.requester.first_name} {request.requester.last_name}".strip() if request.requester else f"ID:{request.requester_id}"
     created_at = request.created_at.strftime('%Y-%m-%d %H:%M') if request.created_at else "N/A"
-    accepted_at = request.accepted_at.strftime('%Y-%m-%d %H:%M') if request.accepted_at else "-" # Используем -
+    accepted_at = request.accepted_at.strftime('%Y-%m-%d %H:%M') if request.accepted_at else "-" 
     location = f"{escape(request.building)}, каб. {escape(request.room)}"
     pc_text = f"\n<b>ПК/Инв. номер:</b> {escape(request.pc_number)}" if request.pc_number else ""
     phone_text = f"\n<b>Телефон:</b> {escape(request.contact_phone)}" if request.contact_phone else ""
@@ -279,7 +275,6 @@ async def cq_admin_view_active_request(callback: types.CallbackQuery, callback_d
 
     # Клавиатура для админа при просмотре активной заявки
     builder = InlineKeyboardBuilder()
-    # Кнопка Назад в меню (возврат к списку требует передачи page/sort)
     builder.button(text="⬅️ Назад в меню", callback_data="admin_back_to_main")
     keyboard = builder.as_markup()
 
@@ -301,14 +296,12 @@ async def cq_admin_view_archive_request(callback: types.CallbackQuery, callback_
 
     if not request:
         await callback.answer("❌ Заявка не найдена.", show_alert=True)
-        # TODO: Обновить список истории админа
         return
     if request.status != RequestStatus.ARCHIVED: # Используем Enum
         await callback.answer("⚠️ Заявка не является архивной.", show_alert=True)
-        # TODO: Обновить список истории админа
         return
 
-    # Формирование текста (остается как есть)
+    # Формирование текста 
     engineer_name = f"{request.engineer.first_name} {request.engineer.last_name}".strip() if request.engineer else "Не назначен"
     client_name = f"{request.requester.first_name} {request.requester.last_name}".strip() if request.requester else f"ID:{request.requester_id}"
     created_at = request.created_at.strftime('%Y-%m-%d %H:%M') if request.created_at else "N/A"
@@ -346,10 +339,10 @@ async def cq_admin_view_archive_request(callback: types.CallbackQuery, callback_
     except TelegramBadRequest: pass
     except Exception as e: logging.error(f"Error editing message for admin view archive request {request_id}: {e}", exc_info=True)
 
-# --- Возврат в главное меню админки (без изменений) ---
+# --- Возврат в главное меню админки  ---
 @router.callback_query(F.data == "admin_back_to_main")
 async def cq_admin_back_to_main(callback: types.CallbackQuery):
-    # ... (код без изменений) ...
+    
     logging.info(f"Admin {callback.from_user.id} requested back to main admin menu.")
     await callback.answer()
     try:
@@ -365,7 +358,7 @@ async def cq_admin_back_to_main(callback: types.CallbackQuery):
     except Exception as e:
         logging.error(f"Error editing message to admin main menu: {e}", exc_info=True)
 
-# --- Игнорируемые колбэки (без изменений) ---
+# --- Игнорируемые колбэки  ---
 @router.callback_query(F.data.startswith("ignore_"))
 async def cq_admin_ignore(callback: types.CallbackQuery):
     await callback.answer()

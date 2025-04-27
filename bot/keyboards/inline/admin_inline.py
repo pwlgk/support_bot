@@ -14,10 +14,10 @@ class AdminActiveNavCallback(CallbackData, prefix="adm_act"):
 
 # --- CallbackData для управления пользователями админом ---
 class AdminUserManageCallback(CallbackData, prefix="adm_usr"):
-    action: str # 'list_page', 'view', 'set_role'
-    page: int = 0 # Для пагинации списка, нужно для возврата на нужную страницу
-    user_id: int = 0 # ID целевого пользователя
-    new_role: str = "" # Новая роль ('admin', 'engineer', 'client')
+    action: str 
+    page: int = 0 
+    user_id: int = 0
+    new_role: str = "" 
 
 # --- Главное меню админки ---
 def get_admin_main_menu() -> InlineKeyboardMarkup:
@@ -26,26 +26,22 @@ def get_admin_main_menu() -> InlineKeyboardMarkup:
     builder.row(
         InlineKeyboardButton(
             text="👥 Управление пользователями",
-            # Запускает хендлер пагинации пользователей с page=0
             callback_data=AdminUserManageCallback(action="list_page", page=0).pack()
         )
     )
     builder.row(
         InlineKeyboardButton(
             text="🛠️ Активные заявки",
-            # Запускает хендлер пагинации активных заявок с page=0
             callback_data=AdminActiveNavCallback(action="page", page=0, sort_by='accepted_asc').pack()
         )
     )
     builder.row(
         InlineKeyboardButton(
             text="📚 История выполненных",
-            # Запускает хендлер пагинации истории с page=0
             callback_data=HistoryNavigationCallback(action="page", page=0, sort_by='date_desc').pack()
         )
     )
-    # Можно добавить другие кнопки админ-панели
-    # builder.row(InlineKeyboardButton(text="⚙️ Настройки", callback_data="admin_settings"))
+
     return builder.as_markup()
 
 # --- Клавиатура для списка пользователей ---
@@ -67,7 +63,7 @@ def create_admin_users_list_keyboard(
             # Формируем отображаемое имя
             name_parts = [user.first_name, user.last_name]
             display_name = " ".join(filter(None, name_parts))
-            if not display_name: display_name = f"ID:{user.id}" # Если имени нет, показываем ID
+            if not display_name: display_name = f"ID:{user.id}" 
             # Добавляем username, если есть
             user_details = f"(@{user.username})" if user.username else f"(ID:{user.id})"
             # Ограничиваем общую длину строки
@@ -82,7 +78,6 @@ def create_admin_users_list_keyboard(
             )
         builder.adjust(1) # По одному пользователю в строке
 
-    # --- БЛОК ПАГИНАЦИИ ---
     if total_pages > 0:
         pagination_row = []
         # 1. Кнопка "Назад" или заполнитель
@@ -112,7 +107,6 @@ def create_admin_users_list_keyboard(
         builder.row(*pagination_row) # Добавляем ряд из 3х кнопок
     elif total_pages == 0 and current_page == 0: # Если список изначально пуст
         builder.row(InlineKeyboardButton(text="- / -", callback_data="ignore_page_indicator"))
-    # --- КОНЕЦ БЛОКА ПАГИНАЦИИ ---
 
     # Кнопка "Назад в админ-меню"
     builder.row(InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="admin_back_to_main"))
@@ -182,7 +176,6 @@ def create_admin_active_requests_keyboard(
             )
         builder.adjust(1) # По одной заявке в строке
 
-    # --- БЛОК ПАГИНАЦИИ ---
     if total_pages > 0:
         pagination_row = []
         # 1. Кнопка "Назад"
@@ -212,7 +205,6 @@ def create_admin_active_requests_keyboard(
         builder.row(*pagination_row)
     elif total_pages == 0 and current_page == 0: # Если список изначально пуст
         builder.row(InlineKeyboardButton(text="- / -", callback_data="ignore_page_indicator"))
-    # --- КОНЕЦ БЛОКА ПАГИНАЦИИ ---
 
     # Кнопка "Назад в меню"
     builder.row(InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="admin_back_to_main"))

@@ -6,26 +6,24 @@ from db.models import Request, UserRole
 
 # --- CallbackData для действий с заявками ---
 class RequestActionCallback(CallbackData, prefix="req"):
-    action: str # 'view', 'accept', 'complete', 'view_my', 'view_archive', 'view_active'
+    action: str 
     request_id: int
 
 # --- CallbackData для навигации по ИСТОРИИ заявок (для инженера и админа) ---
 class HistoryNavigationCallback(CallbackData, prefix="hist"):
-    action: str # 'page', 'sort'
+    action: str 
     page: int
     sort_by: str
 
 # --- CallbackData для навигации по АКТИВНЫМ заявкам ИНЖЕНЕРА ---
-# (Этот класс не нужен для проверки админской пагинации, но оставляем его)
 class EngActiveNavCallback(CallbackData, prefix="eng_act"):
-    action: str # 'page', 'sort'
+    action: str 
     page: int
     sort_by: str
 
 
-# --- Клавиатура для списка НОВЫХ заявок (не используется админом напрямую) ---
+# --- Клавиатура для списка НОВЫХ заявок  ---
 def create_new_requests_keyboard(requests: list[Request]) -> InlineKeyboardMarkup:
-    # ... (код без изменений) ...
     builder = InlineKeyboardBuilder()
     if not requests:
         builder.button(text="Нет новых заявок", callback_data="ignore_empty_new")
@@ -38,14 +36,13 @@ def create_new_requests_keyboard(requests: list[Request]) -> InlineKeyboardMarku
     builder.adjust(1)
     return builder.as_markup()
 
-# --- Клавиатура для списка активных заявок ИНЖЕНЕРА (не используется админом) ---
+# --- Клавиатура для списка активных заявок ИНЖЕНЕРА  ---
 def create_engineer_active_requests_keyboard(
     requests: list[Request],
     current_page: int,
     total_pages: int,
     current_sort: str
 ) -> InlineKeyboardMarkup:
-     # ... (код без изменений) ...
     builder = InlineKeyboardBuilder()
     if not requests and current_page == 0:
         builder.button(text="Нет заявок в работе", callback_data="ignore_empty_inprogress")
@@ -88,9 +85,8 @@ def create_engineer_active_requests_keyboard(
     builder.row(InlineKeyboardButton(text="⬅️ Главное меню", callback_data="back_to_main_menu_eng"))
     return builder.as_markup()
 
-# --- Клавиатуры для просмотра деталей заявок (не используются админом напрямую для пагинации) ---
+# --- Клавиатуры для просмотра деталей заявок ---
 def create_view_request_keyboard(request_id: int) -> InlineKeyboardMarkup:
-    # ... (код без изменений) ...
     builder = InlineKeyboardBuilder()
     builder.button(
         text="✅ Принять в работу",
@@ -101,7 +97,6 @@ def create_view_request_keyboard(request_id: int) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 def create_complete_request_keyboard(request_id: int) -> InlineKeyboardMarkup:
-    # ... (код без изменений) ...
     builder = InlineKeyboardBuilder()
     builder.button(
         text="🏁 Завершить (Выполнено)",
@@ -111,8 +106,7 @@ def create_complete_request_keyboard(request_id: int) -> InlineKeyboardMarkup:
     builder.adjust(1)
     return builder.as_markup()
 
-# --- Клавиатура для просмотра ИСТОРИИ заявок (инженером или админом) ---
-# (Эта функция используется админом)
+# --- Клавиатура для просмотра ИСТОРИИ заявок ---
 def create_archive_requests_keyboard(
     requests: list[Request],
     current_page: int,
@@ -143,7 +137,6 @@ def create_archive_requests_keyboard(
             )
         builder.adjust(1)
 
-    # --- БЛОК ПАГИНАЦИИ ---
     if total_pages > 0:
         pagination_row = []
         # 1. Кнопка "Назад"
@@ -173,7 +166,6 @@ def create_archive_requests_keyboard(
         builder.row(*pagination_row)
     elif total_pages == 0 and current_page == 0:
         builder.row(InlineKeyboardButton(text="- / -", callback_data="ignore_page_indicator"))
-    # --- КОНЕЦ БЛОКА ПАГИНАЦИИ ---
 
     # Кнопка "Назад в меню" в зависимости от роли
     if user_role == UserRole.ADMIN:
@@ -181,7 +173,7 @@ def create_archive_requests_keyboard(
     elif user_role == UserRole.ENGINEER:
         builder.row(InlineKeyboardButton(text="⬅️ Главное меню", callback_data="back_to_main_menu_eng"))
 
-    return builder.as_markup()# bot/keyboards/inline/requests_inline.py
+    return builder.as_markup()
 from aiogram.filters.callback_data import CallbackData
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -189,24 +181,21 @@ from db.models import Request, UserRole
 
 # --- CallbackData для действий с заявками ---
 class RequestActionCallback(CallbackData, prefix="req"):
-    # Добавлен 'view_active' (может использоваться админом или инженером)
-    action: str # 'view', 'accept', 'complete', 'view_my', 'view_archive', 'view_active'
+    action: str 
     request_id: int
 
 # --- CallbackData для навигации по ИСТОРИИ заявок (для инженера и админа) ---
 class HistoryNavigationCallback(CallbackData, prefix="hist"):
-    action: str # 'page', 'sort'
+    action: str 
     page: int
     sort_by: str
 
-# --- НОВЫЙ CallbackData для навигации по АКТИВНЫМ заявкам ИНЖЕНЕРА ---
 class EngActiveNavCallback(CallbackData, prefix="eng_act"):
     action: str # 'page', 'sort'
     page: int
     sort_by: str # Поле сортировки (например, 'accepted_asc', 'created_desc')
 
 
-# --- Клавиатура для списка НОВЫХ заявок (без изменений) ---
 def create_new_requests_keyboard(requests: list[Request]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     if not requests:
@@ -220,7 +209,6 @@ def create_new_requests_keyboard(requests: list[Request]) -> InlineKeyboardMarku
     builder.adjust(1)
     return builder.as_markup()
 
-# --- НОВАЯ Клавиатура для списка СВОИХ заявок В РАБОТЕ (ИНЖЕНЕРОМ, с пагинацией) ---
 def create_engineer_active_requests_keyboard(
     requests: list[Request],
     current_page: int,
@@ -234,7 +222,6 @@ def create_engineer_active_requests_keyboard(
         for req in requests:
             client_name = req.requester.first_name if req.requester and req.requester.first_name else f"ID:{req.requester_id}"
             accepted_date_str = req.accepted_at.strftime('%d.%m') if req.accepted_at else '??.??'
-            # Сокращаем описание, чтобы уместить дату и имя
             desc_text = req.description or "Без описания"
             button_text = f"#{req.id} ({accepted_date_str}) {client_name} - {desc_text[:20]}..."
             max_len = 50
@@ -246,7 +233,6 @@ def create_engineer_active_requests_keyboard(
             )
         builder.adjust(1)
 
-    # --- БЛОК ПАГИНАЦИИ ---
     if total_pages > 0:
         pagination_row = []
         if current_page > 0:
@@ -255,7 +241,6 @@ def create_engineer_active_requests_keyboard(
                 callback_data=EngActiveNavCallback(action="page", page=current_page - 1, sort_by=current_sort).pack()
             ))
         else:
-            # --- ИЗМЕНЕНО: Используем "•" вместо " " ---
             pagination_row.append(InlineKeyboardButton(text="•", callback_data="ignore_nav_prev"))
 
         pagination_row.append(InlineKeyboardButton(
@@ -269,15 +254,12 @@ def create_engineer_active_requests_keyboard(
                 callback_data=EngActiveNavCallback(action="page", page=current_page + 1, sort_by=current_sort).pack()
             ))
         else:
-            # --- ИЗМЕНЕНО: Используем "•" вместо " " ---
             pagination_row.append(InlineKeyboardButton(text="•", callback_data="ignore_nav_next"))
 
         builder.row(*pagination_row)
     elif total_pages == 0 and current_page == 0:
         builder.row(InlineKeyboardButton(text="- / -", callback_data="ignore_page_indicator"))
-    # --- КОНЕЦ БЛОКА ПАГИНАЦИИ ---
 
-    # Добавляем кнопку Назад в главное меню инженера
     builder.row(InlineKeyboardButton(text="⬅️ Главное меню", callback_data="back_to_main_menu_eng")) # Нужен обработчик
 
     return builder.as_markup()
@@ -337,7 +319,6 @@ def create_archive_requests_keyboard(
             )
         builder.adjust(1)
 
-    # --- БЛОК ПАГИНАЦИИ (без изменений) ---
     if total_pages > 0:
         pagination_row = []
         if current_page > 0:
@@ -361,7 +342,6 @@ def create_archive_requests_keyboard(
         builder.row(*pagination_row)
     elif total_pages == 0 and current_page == 0:
         builder.row(InlineKeyboardButton(text="- / -", callback_data="ignore_page_indicator"))
-    # --- КОНЕЦ БЛОКА ПАГИНАЦИИ ---
 
     # Кнопка "Назад в меню" в зависимости от роли
     if user_role == UserRole.ADMIN:
