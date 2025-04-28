@@ -91,7 +91,7 @@
         BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 # Замените на ваш реальный токен!
 
         # --- PostgreSQL Database (для Docker Compose) ---
-        POSTGRES_USER=support_user          # Имя пользователя БД (можно оставить)
+        POSTGRES_USER=support_bot          # Имя пользователя БД (можно оставить)
         POSTGRES_PASSWORD=your_very_secure_password # Придумайте НАДЕЖНЫЙ пароль!
         POSTGRES_DB=support_bot_db          # Имя базы данных (можно оставить)
         DATABASE_HOST=db                    # Имя сервиса БД в docker-compose.yml (НЕ МЕНЯТЬ!)
